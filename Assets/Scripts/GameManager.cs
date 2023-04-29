@@ -14,17 +14,14 @@ struct GameManagerData
 struct BrickData
 {
     public GameObject brick;
-    public List<Vector3> topSocket;
-    public List<Vector3> bottomSocket;
+    public Dictionary<string, List<Vector3>> sockets;
 }
 
-public class GameManager : MonoBehaviour
-{
+public class GameManager : MonoBehaviour {
     public GameManager instance = null;
     GameManagerData gameManagerData = new GameManagerData();
 
-    void Awake()
-    {
+    void Awake() {
         if (instance == null) instance = this;
         else if (instance != this) Destroy(gameObject);
 
@@ -35,127 +32,164 @@ public class GameManager : MonoBehaviour
 
     void Update() {}
 
-    void DrawSockets ()
-    {
-        foreach (BrickData brickData in gameManagerData.bricks)
-        {
-            foreach (Vector3 socket in brickData.topSocket)
-            {
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.parent = brickData.brick.transform;
-                sphere.transform.position = brickData.brick.transform.TransformPoint(socket);
-                sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-                
-                MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-                Material material = renderer.material;
-                material.color = Color.red;
-            }
+    void DrawSocket(GameObject parent, Vector3 pos, Color color) {
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        sphere.transform.parent = parent.transform;
+        sphere.transform.position = parent.transform.TransformPoint(pos);
+        sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
 
-            foreach (Vector3 socket in brickData.bottomSocket)
-            {
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.parent = brickData.brick.transform;
-                sphere.transform.position = brickData.brick.transform.TransformPoint(socket);
-                sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-                
-                MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-                Material material = renderer.material;
-                material.color = Color.white;
+        MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
+        Material material = renderer.material;
+        material.color = color;
+    }
+
+    void DrawSockets () {
+        foreach (BrickData brickData in gameManagerData.bricks) {
+            foreach (KeyValuePair<string, List<Vector3>> entry in brickData.sockets) {
+                foreach (Vector3 socket in entry.Value) {
+                    DrawSocket(brickData.brick, socket, Color.red);
+                }
             }
         }
     }
 
-    void FetchBricks()
-    {
+    void FetchBricks() {
         List<GameObject> allBricks = new List<GameObject>(GameObject.FindGameObjectsWithTag("Brick"));
         gameManagerData.bricks = new List<BrickData>();
 
-        for (int i = 0; i < allBricks.Count; i++) 
-        {
+        for (int i = 0; i < allBricks.Count; i++) {
             gameManagerData.bricks.Add(new BrickData() 
                 {
                     brick = allBricks[i], 
-                    topSocket = new List<Vector3>(),
-                    bottomSocket = new List<Vector3>(),
+                    sockets = new Dictionary<string, List<Vector3>>(),
                 }
             );
 
             MeshFilter meshFilter = allBricks[i].GetComponent<MeshFilter>();
             List<Vector3> meshVertices = new List<Vector3>(meshFilter.mesh.vertices);
 
-            float highestY = 0;
-            float lowestY = 0;
-            List<Vector3> highestPoints = new List<Vector3>();
-
-            foreach (Vector3 vertex in meshVertices)
-            {
-                if (vertex.y > highestY)
-                {
-                    highestY = vertex.y;
-                    highestPoints.Clear();
-                    highestPoints.Add(vertex);
-                }
-                else if (vertex.y == highestY)
-                {
-                    highestPoints.Add(vertex);
-                }
-
-                if (vertex.y < lowestY)
-                {
-                    lowestY = vertex.y;
-                }
-            }
+            float top = 0;
+            float bottom = 0;
+            float left = 0;
+            float right = 0;
+            float front = 0;
+            float back = 0;
             
-            highestPoints = new List<Vector3>(new HashSet<Vector3>(highestPoints));
-            List<List<Vector3>> groups = new List<List<Vector3>>();
+            Dictionary<string, List<Vector3>> points = new Dictionary<string, List<Vector3>>();
+            points.Add("TOP", new List<Vector3>());
+            points.Add("LEFT", new List<Vector3>());
+            points.Add("RIGHT", new List<Vector3>());
+            points.Add("FRONT", new List<Vector3>());
+            points.Add("BACK", new List<Vector3>());
 
-            foreach (Vector3 pointA in highestPoints)
-            {
-                bool added = false;
-
-                foreach (List<Vector3> group in groups)
+            foreach (Vector3 vertex in meshVertices) {
+                if (vertex.y > top)
                 {
-                    // groupe déjà plein
-                    // TODO: le nombre de points par groupe peut varier en fonction du mesh, donc du modèle 3D
-                    // TODO: Vérifier que les modèles de briques ont toujours 25 points par groupe
-                    if (group.Count == 25) continue;
+                    top = vertex.y;
+                    points["TOP"].Clear();
+                    points["TOP"].Add(vertex);
+                }
+                else if (vertex.y == top) points["TOP"].Add(vertex);
 
-                    // Distance moyenne entre le point A et les points du groupe
-                    float averageDistance = 0;
-
-                    foreach (Vector3 pointB in group)
-                    {
-                        averageDistance += Vector3.Distance(pointA, pointB);
-                    }
-
-                    // On ajoute le point A au groupe si la distance moyenne est inférieure à la distance requise
-                    if (averageDistance / group.Count <= GameManagerData.thresholdDistance)
-                    {
-                        group.Add(pointA);
-                        added = true;
-                        break;
-                    }
+                if (vertex.y < bottom)
+                {
+                    bottom = vertex.y;
                 }
 
-                // Si le point n'a pas été ajouté à un groupe existant, on crée un nouveau groupe
-                if (!added)
+                if (vertex.x < left)
                 {
-                    List<Vector3> newGroup = new List<Vector3>();
-                    newGroup.Add(pointA);
-                    groups.Add(newGroup);
+                    left = vertex.x;
+                    points["LEFT"].Clear();
+                    points["LEFT"].Add(vertex);
                 }
+                else if (vertex.x == left) points["LEFT"].Add(vertex);
+
+                if (vertex.x > right)
+                {
+                    right = vertex.x;
+                    points["RIGHT"].Clear();
+                    points["RIGHT"].Add(vertex);
+                }
+                else if (vertex.x == right) points["RIGHT"].Add(vertex);
+
+                if (vertex.z > front)
+                {
+                    front = vertex.z;
+                    points["FRONT"].Clear();
+                    points["FRONT"].Add(vertex);
+                }
+                else if (vertex.z == front) points["FRONT"].Add(vertex);
+
+                if (vertex.z < back)
+                {
+                    back = vertex.z;
+                    points["BACK"].Clear();
+                    points["BACK"].Add(vertex);
+                }
+                else if (vertex.z == back) points["BACK"].Add(vertex);
             }
 
-            foreach (List<Vector3> group in groups)
-            {
-                Vector3 center = Vector3.zero;
-                foreach (Vector3 point in group)
-                {
-                    center += point;
+            Dictionary<string, List<Vector3>> filteredPoints = new Dictionary<string, List<Vector3>>();
+
+            foreach (KeyValuePair<string, List<Vector3>> entry in points)
+                filteredPoints.Add(entry.Key, new List<Vector3>(new HashSet<Vector3>(entry.Value)));
+
+            foreach (KeyValuePair<string, List<Vector3>> entry in filteredPoints) {
+                List<List<Vector3>> groups = new List<List<Vector3>>();
+
+                foreach (Vector3 pointA in entry.Value) {
+                    bool added = false;
+
+                    foreach (List<Vector3> group in groups) {
+                        // groupe déjà plein
+                        if (group.Count == 25) continue;
+
+                        float averageDist = 0;
+
+                        foreach (Vector3 pointB in group)
+                            averageDist += Vector3.Distance(pointA, pointB);
+
+                        if (averageDist / group.Count <= GameManagerData.thresholdDistance)
+                        {
+                            group.Add(pointA);
+                            added = true;
+                            break;
+                        }
+
+                    }
+
+                    if (!added) groups.Add(new List<Vector3>() { pointA });
                 }
-                center /= group.Count;
-                gameManagerData.bricks[i].topSocket.Add(center);
-                gameManagerData.bricks[i].bottomSocket.Add(new Vector3(center.x, lowestY - GameManagerData.bottomSocketY, center.z));
+
+                foreach (List<Vector3> group in groups) {
+                    Vector3 center = Vector3.zero;
+                    foreach (Vector3 point in group)
+                        center += point;
+
+                    center /= group.Count;
+
+                    switch (entry.Key) {
+                        case "TOP":
+                            if (gameManagerData.bricks[i].sockets.ContainsKey("TOP"))
+                            {
+                                gameManagerData.bricks[i].sockets["TOP"].Add(center);
+                                gameManagerData.bricks[i].sockets["BOTTOM"].Add(new Vector3(center.x, bottom - GameManagerData.bottomSocketY, center.z));
+                            }
+                            else
+                            {
+                                gameManagerData.bricks[i].sockets.Add("TOP", new List<Vector3>() { center });
+                                gameManagerData.bricks[i].sockets.Add("BOTTOM", new List<Vector3>() { new Vector3(center.x, bottom - GameManagerData.bottomSocketY, center.z)});
+                            }
+                            break;
+                        
+                        default:
+                            if (gameManagerData.bricks[i].sockets.ContainsKey(entry.Key))
+                                gameManagerData.bricks[i].sockets[entry.Key].Add(center);
+                            else
+                                gameManagerData.bricks[i].sockets.Add(entry.Key, new List<Vector3>() { center });
+                            break;
+                    }
+                }
             }
         }
     }
