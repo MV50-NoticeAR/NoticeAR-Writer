@@ -3,75 +3,113 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
+struct GameManagerData
+{
+    public List<BrickData> bricks;
+    public const float brickCircleRadius = 0.05f;
+    public const float thresholdDistance = 0.05f;
+    public const float bottomSocketY = -0.0185f; // 0.018 -> 0.032
+}
+
+struct BrickData
+{
+    public GameObject brick;
+    public List<Vector3> topSocket;
+    public List<Vector3> bottomSocket;
+}
+
 public class GameManager : MonoBehaviour
 {
     public GameManager instance = null;
-    public List<GameObject> bricks = new List<GameObject>();
-    public float brickCircleRadius = 0.05f;
-    
+    GameManagerData gameManagerData = new GameManagerData();
+
     void Awake()
     {
         if (instance == null) instance = this;
         else if (instance != this) Destroy(gameObject);
 
         DontDestroyOnLoad(gameObject);
-        SetupScene();
+        FetchBricks();
+        DrawSockets();
     }
 
     void Update() {}
 
-    void SetupScene()
+    void DrawSockets ()
     {
-        FetchBricks();
+        foreach (BrickData brickData in gameManagerData.bricks)
+        {
+            foreach (Vector3 socket in brickData.topSocket)
+            {
+                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                sphere.transform.parent = brickData.brick.transform;
+                sphere.transform.position = brickData.brick.transform.TransformPoint(socket);
+                sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+                
+                MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
+                Material material = renderer.material;
+                material.color = Color.red;
+            }
+
+            foreach (Vector3 socket in brickData.bottomSocket)
+            {
+                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                sphere.transform.parent = brickData.brick.transform;
+                sphere.transform.position = brickData.brick.transform.TransformPoint(socket);
+                sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
+                
+                MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
+                Material material = renderer.material;
+                material.color = Color.white;
+            }
+        }
     }
 
     void FetchBricks()
     {
-        bricks = new List<GameObject>(GameObject.FindGameObjectsWithTag("Brick"));
-        foreach (var brick in bricks)
+        List<GameObject> allBricks = new List<GameObject>(GameObject.FindGameObjectsWithTag("Brick"));
+        gameManagerData.bricks = new List<BrickData>();
+
+        for (int i = 0; i < allBricks.Count; i++) 
         {
-            Debug.Log(brick.name);
+            gameManagerData.bricks.Add(new BrickData() 
+                {
+                    brick = allBricks[i], 
+                    topSocket = new List<Vector3>(),
+                    bottomSocket = new List<Vector3>(),
+                }
+            );
 
-            MeshFilter meshFilter = brick.GetComponent<MeshFilter>();
-            MeshRenderer meshRenderer = brick.GetComponent<MeshRenderer>();
-            SphereCollider sphereCollider = brick.GetComponent<SphereCollider>();
-
-            // Récupération des vertices du mesh
+            MeshFilter meshFilter = allBricks[i].GetComponent<MeshFilter>();
             List<Vector3> meshVertices = new List<Vector3>(meshFilter.mesh.vertices);
 
-            // Variable tampon pour stocker le point le plus haut du mesh
             float highestY = 0;
-            // Ensemble des points les plus hauts du mesh
-            List<Vector3> points = new List<Vector3>();
+            float lowestY = 0;
+            List<Vector3> highestPoints = new List<Vector3>();
 
-            // On parcourt tous les points du mesh pour trouver les points les plus haut
-            // TODO : utiliser un algorithme de recherche plus efficace (sans doublons)
             foreach (Vector3 vertex in meshVertices)
             {
                 if (vertex.y > highestY)
                 {
                     highestY = vertex.y;
-                    points.Clear();
-                    points.Add(vertex);
+                    highestPoints.Clear();
+                    highestPoints.Add(vertex);
                 }
                 else if (vertex.y == highestY)
                 {
-                    points.Add(vertex);
+                    highestPoints.Add(vertex);
+                }
+
+                if (vertex.y < lowestY)
+                {
+                    lowestY = vertex.y;
                 }
             }
-
-            // On supprime les doublons
-            // TODO : à enlever une fois l'algorithme de recherche plus efficace implémenté
-            points = new List<Vector3>(new HashSet<Vector3>(points));
-            // Debug.Log("Number of highest points: " + points.Count);
-
-            // Regroupement des points les plus hauts en fonction de leur distance moyenne au sein d'un même groupe
-            // Distance requise pour faire partis du même groupe
-            float thresholdDistance = 0.05f;
-            // Ensemble des groupes de points
+            
+            highestPoints = new List<Vector3>(new HashSet<Vector3>(highestPoints));
             List<List<Vector3>> groups = new List<List<Vector3>>();
 
-            foreach (Vector3 pointA in points)
+            foreach (Vector3 pointA in highestPoints)
             {
                 bool added = false;
 
@@ -91,7 +129,7 @@ public class GameManager : MonoBehaviour
                     }
 
                     // On ajoute le point A au groupe si la distance moyenne est inférieure à la distance requise
-                    if (averageDistance / group.Count <= thresholdDistance)
+                    if (averageDistance / group.Count <= GameManagerData.thresholdDistance)
                     {
                         group.Add(pointA);
                         added = true;
@@ -116,17 +154,8 @@ public class GameManager : MonoBehaviour
                     center += point;
                 }
                 center /= group.Count;
-
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.parent = brick.transform;
-                sphere.transform.position = brick.transform.TransformPoint(center);
-                sphere.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-                
-                MeshRenderer renderer = sphere.GetComponent<MeshRenderer>();
-                Material material = renderer.material;
-                material.color = Color.red;
-
-                // TODO : à voir comment exposer de façon publique les points de chaque socket 
+                gameManagerData.bricks[i].topSocket.Add(center);
+                gameManagerData.bricks[i].bottomSocket.Add(new Vector3(center.x, lowestY - GameManagerData.bottomSocketY, center.z));
             }
         }
     }
