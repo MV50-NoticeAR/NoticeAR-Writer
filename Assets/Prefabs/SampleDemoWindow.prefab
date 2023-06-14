@@ -1,0 +1,123 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6697170997103758829
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1788033768343668823}
+  - component: {fileID: 5844002051904410262}
+  - component: {fileID: 871045696096265007}
+  m_Layer: 0
+  m_Name: SampleDemoWindow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1788033768343668823
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6697170997103758829}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5844002051904410262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6697170997103758829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3823c58ff231244a92c4f9877f7911e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _camera: {fileID: 0}
+  _renderFeature: {fileID: 0}
+  _rendererType: 0
+  _platformType: 0
+  _iniSettings: {fileID: 0}
+  _initialConfiguration:
+    ImGuiConfig: 65
+    DoubleClickTime: 0.3
+    DoubleClickMaxDist: 6
+    DragThreshold: 6
+    KeyRepeatDelay: 0.25
+    KeyRepeatRate: 0.05
+    FontGlobalScale: 1
+    FontAllowUserScaling: 0
+    DisplayFramebufferScale: {x: 1, y: 1}
+    MouseDrawCursor: 0
+    TextCursorBlink: 0
+    ResizeFromEdges: 1
+    MoveFromTitleOnly: 1
+    ConfigMemoryCompactTimer: 60
+    ConfigDockingNoSplit: 0
+    ConfigDockingAlwaysTabBar: 0
+    ConfigDockingTransparentPayload: 0
+  _fontCustomInitializer:
+    m_PersistentCalls:
+      m_Calls: []
+  _fontAtlasConfiguration: {fileID: 0}
+  _shaders: {fileID: 11400000, guid: 68f2e550e81076948ba9757c73f74336, type: 2}
+  _style: {fileID: 11400000, guid: 90718c4e7d6fa04438adef1ad7a432cc, type: 2}
+  _cursorShapes: {fileID: 11400000, guid: 71deade41763c6e4eaeb5df973b321f1, type: 2}
+  _doGlobalEvents: 1
+--- !u!114 &871045696096265007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6697170997103758829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 647207c0ea0b74a4fb7d033b1b39dc6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _barValues:
+  - 1
+  - 4
+  - 9
+  - 16
+  - 25
+  - 36
+  - 49
+  - 64
+  - 81
+  - 100
+  _xValues:
+  - 1
+  - 4
+  - 9
+  - 16
+  - 25
+  - 36
+  - 49
+  - 64
+  - 81
+  - 100
+  _yValues:
+  - 1
+  - 4
+  - 9
+  - 16
+  - 25
+  - 36
+  - 49
+  - 64
+  - 81
+  - 100
